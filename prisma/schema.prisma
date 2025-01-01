@@ -1,0 +1,38 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id         Int        @id @default(autoincrement())
+  username   String     @unique
+  email      String     @unique
+  password   String
+  department String
+  category   String
+  analyses   Analysis[]
+}
+
+model Analysis {
+  id            Int      @id @default(autoincrement())
+  year          Int
+  semester      Int
+  subject       String
+  id_group      String
+  id_department String
+  count_stud    Int
+  count5        Int
+  count4        Int
+  count3        Int
+  count2        Int
+  overall       Float
+  average       Float
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  user          User     @relation(fields: [id_user], references: [id])
+  id_user       Int
+}
