@@ -1,6 +1,10 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { Menu, X, User, ChevronDown, Plus, Edit2, Trash2 } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,37 +20,34 @@ import {
 import AnalysisTable from '@/components/AnalysisTable';
 import { Button } from '@/components/ui/button';
 
-const Dashboard = ({ user }) => {
+const Dashboard = () => {
+  const { t } = useTranslation('common');
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedView, setSelectedView] = useState('all');
-  const [username, setUsername] = useState('');
-  const [category, setCategory] = useState('');
   const [analyses, setAnalyses] = useState([]);
 
- 
+  // Redirect if not authenticated
   useEffect(() => {
-const storedUsername = localStorage.getItem('user');
-    if (storedUsername) {
-      setUsername(storedUsername);
-    }
-    const storedCategory = localStorage.getItem('category');
-    if (storedCategory) {
-      setCategory(storedCategory);
-    } 
-    const token = localStorage.getItem('token');
-    if (!token) {
+    if (status === 'unauthenticated') {
       router.push('/login');
-      return;
     }
-    fetchAnalyses(token);
-  }, []);
+  }, [status, router]);
 
-  async function fetchAnalyses(token) {
+  // Fetch analyses when session is available
+  useEffect(() => {
+    if (session?.user) {
+      fetchAnalyses();
+    }
+  }, [session]);
+
+  async function fetchAnalyses() {
     try {
       const res = await fetch('/api/analyses', {
-        method: 'GET',
         headers: {
-          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
 
@@ -62,11 +63,26 @@ const storedUsername = localStorage.getItem('user');
   }
 
   const canEdit = (analysis) => {
-    return user.id === analysis.id_user || 
-           category === 'user' ||
-           category === 'admin' || 
-           category === 'manager';
+    return session?.user?.id === analysis.id_user || 
+           session?.user?.role === 'user' ||
+           session?.user?.role === 'admin' || 
+           session?.user?.role === 'manager';
   };
+
+  // Show loading state
+  if (status === 'loading') {
+    return <div className="flex items-center justify-center min-h-screen">
+      <p className="text-lg">Loading...</p>
+    </div>;
+  }
+
+  // Show auth required message
+  if (!session) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <p className="text-lg">Please sign in to access the dashboard</p>
+    </div>;
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Top Navigation */}
@@ -93,13 +109,17 @@ const storedUsername = localStorage.getItem('user');
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-2">
                     <User size={20} />
-                    <span>{username}</span>
+                    <span>{session.user.name}</span>
                     <ChevronDown size={16} />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuItem>Profile Settings</DropdownMenuItem>
-                  <DropdownMenuItem>Logout</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/profile')}>
+                    Profile Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => signOut()}>
+                    Logout
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -118,6 +138,8 @@ const storedUsername = localStorage.getItem('user');
         `}>
           <div className="h-full px-4 py-6">
             <nav>
+            {(session.user.role === 'admin' || 
+                session.user.role === 'manager' ) && (
               <Button 
                 variant="ghost" 
                 className="w-full justify-start mb-2"
@@ -125,6 +147,7 @@ const storedUsername = localStorage.getItem('user');
               >
                 All Analyses
               </Button>
+              )}
               <Button 
                 variant="ghost" 
                 className="w-full justify-start mb-2"
@@ -132,7 +155,8 @@ const storedUsername = localStorage.getItem('user');
               >
                 My Analyses
               </Button>
-              {(category === 'admin' || category === 'manager' || category === 'user') && (
+              {(session.user.role === 'admin' || 
+                session.user.role === 'manager' ) && (
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start mb-2"
@@ -160,56 +184,14 @@ const storedUsername = localStorage.getItem('user');
               </Button>
             </div>
 
-            {/* Analysis Cards Grid */}
-            {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {analyses.map((analysis) => (
-                <Card key={analysis.id}>
-                  <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                    <CardTitle className="text-lg font-medium">
-                      {analysis.subject}
-                    </CardTitle>
-                    {canEdit(analysis) && (
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="icon">
-                          <Edit2 size={16} />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="text-red-600">
-                          <Trash2 size={16} />
-                        </Button>
-                      </div>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">Group:</span>
-                        <span>{analysis.id_group}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">Department:</span>
-                        <span>{analysis.id_department}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">Average:</span>
-                        <span className="font-semibold">{analysis.average}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">Students:</span>
-                        <span>{analysis.count_stud}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>*/}
             <Card>
-        <CardHeader>
-          <CardTitle>Performance Analysis</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <AnalysisTable analyses={analyses} />
-        </CardContent>
-      </Card>
+              <CardHeader>
+                <CardTitle>Performance Analysis</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AnalysisTable analyses={analyses} />
+              </CardContent>
+            </Card>
           </div>
         </main>
       </div>

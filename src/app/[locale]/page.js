@@ -4,9 +4,12 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BarChart, PieChart, LineChart, TrendingUp, Users, BookOpen, Award } from 'lucide-react';
 import { useRouter } from "next/navigation";
+import { useTranslations } from 'next-intl';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function MainPage() {
   const [isLoggedIn] = useState(false); // Replace with actual auth state
+  const t = useTranslations('auth');
   const router = useRouter();
   const handleClickLogin = () => {
     console.log("Button login clicked!");
@@ -30,7 +33,7 @@ export default function MainPage() {
             <div className="flex items-center space-x-4">
               {!isLoggedIn ? (
                 <>
-                  <Button variant="outline" onClick={handleClickLogin}>Login</Button>
+                  <Button variant="outline" onClick={handleClickLogin}>{t('signin')}</Button>
                   <Button onClick={handleClickSignUP}>Sign Up</Button>
                 </>
               ) : (

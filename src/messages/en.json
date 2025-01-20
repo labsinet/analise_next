@@ -1,0 +1,18 @@
+{
+    "auth": {
+      "signin": "Sign In",
+      "login": "login",
+      "signUp": "Sign Up",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Submit"
+    },
+    "dashboard": {
+      "welcome": "Welcome to Dashboard",
+      "profile": "Profile",
+      "settings": "Settings"
+    },
+    "common": {
+      "switchLanguage": "Switch language"
+    }
+  }

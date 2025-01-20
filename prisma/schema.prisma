@@ -7,32 +7,44 @@ generator client {
   provider = "prisma-client-js"
 }
 
+
 model User {
-  id         Int        @id @default(autoincrement())
-  username   String     @unique
-  email      String     @unique
+  id         Int      @id @default(autoincrement())
+  username   String   
+  email      String   @unique
   password   String
   department String
   category   String
-  analyses   Analysis[]
+  role       String   @default("user")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime? @map("updated_at")
+  analysis   Analysis[]
+
+  @@map("user")
 }
 
 model Analysis {
-  id            Int      @id @default(autoincrement())
-  year          Int
-  semester      Int
-  subject       String
-  id_group      String
-  id_department String
-  count_stud    Int
-  count5        Int
-  count4        Int
-  count3        Int
-  count2        Int
-  overall       Float
-  average       Float
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  year             Int?
+  semester         Int?
+  subject          String?  @db.VarChar(191)
+  id_group         String?  @db.VarChar(191)
+  id_department    String?  @db.VarChar(191)
+  count_stud       Int?
+  count5           Int?
+  count4           Int?
+  count3           Int?
+  count2           Int?
+  count_passed     Int?
+  count_released   Int?
+  count_not_cert   Int?
+  count_acad_leave Int?
+  count_expelled   Int?
+  quality          Decimal? @db.Decimal(6, 2)
+  overall          Float
+  average          Float
+  created_at       DateTime @default(now()) @db.DateTime(3)
+  updated_at       DateTime? @db.DateTime(3)
   user          User     @relation(fields: [id_user], references: [id])
   id_user       Int
 }

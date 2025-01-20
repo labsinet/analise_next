@@ -1,24 +1,52 @@
 import { PrismaClient } from '@prisma/client';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../auth/[...nextauth]/route';
 
 const prisma = new PrismaClient();
 
+prisma.$connect()
+  .then(() => console.log('Successfully connected to database'))
+  .catch((e) => console.error('Error connecting to database:', e));
+
+// Helper function to check user authorization
+async function checkAuthorization(req) {
+  const session = await getServerSession();
+  
+  if (!session) {
+    return { authorized: false, error: 'Unauthorized' };
+  }
+  
+  return { authorized: true, session };
+}
+
 export async function GET(req) {
+  let analyses = await prisma.analysis.findMany();
+     
   try {
-    // Отримання заголовку Authorization
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('Starting GET request');
+    const auth = await checkAuthorization();
+    //console.log('Auth result:', auth);
+    
+    if (!auth.authorized) {
       return new Response(
-        JSON.stringify({ message: 'Unauthorized' }),
+        JSON.stringify({ message: auth.error }),
         { status: 401 }
       );
     }
 
-    const token = authHeader.split(' ')[1];
-
-    // TODO: Додати логіку перевірки токену (JWT або інший механізм)
-
-    // Отримання даних аналізів із бази даних
-    const analyses = await prisma.analysis.findMany();
+    // Get analyses based on user role
+    let analyses;
+    if (auth.session.user.role === 'admin') {
+      analyses = await prisma.analysis.findMany();
+      
+    } else {
+      // Regular users can only see their own analyses
+      analyses = await prisma.analysis.findMany({
+        where: {
+          id_user: auth.session.user.id
+        }
+      });
+    }
 
     return new Response(
       JSON.stringify(analyses),
@@ -35,14 +63,26 @@ export async function GET(req) {
   }
 }
 
-
-// POST: Додати новий аналіз
 export async function POST(req) {
   try {
+    const auth = await checkAuthorization(req);
+    if (!auth.authorized) {
+      return new Response(
+        JSON.stringify({ message: auth.error }),
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
+    
+    // Add user ID from session to the data
+    const data = {
+      ...body,
+      id_user: auth.session.user.id
+    };
 
     const newAnalysis = await prisma.analysis.create({
-      data: body,
+      data
     });
 
     return new Response(JSON.stringify(newAnalysis), { status: 201 });
@@ -54,14 +94,34 @@ export async function POST(req) {
   }
 }
 
-// PUT: Оновити аналіз за ID
 export async function PUT(req) {
   try {
+    const auth = await checkAuthorization(req);
+    if (!auth.authorized) {
+      return new Response(
+        JSON.stringify({ message: auth.error }),
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const { id, ...data } = body;
 
     if (!id) {
       return new Response(JSON.stringify({ message: 'ID is required' }), { status: 400 });
+    }
+
+    // Check if user has permission to update this analysis
+    const existingAnalysis = await prisma.analysis.findUnique({
+      where: { id }
+    });
+
+    if (!existingAnalysis) {
+      return new Response(JSON.stringify({ message: 'Analysis not found' }), { status: 404 });
+    }
+
+    if (existingAnalysis.id_user !== auth.session.user.id && auth.session.user.role !== 'admin') {
+      return new Response(JSON.stringify({ message: 'Not authorized to update this analysis' }), { status: 403 });
     }
 
     const updatedAnalysis = await prisma.analysis.update({
@@ -78,14 +138,34 @@ export async function PUT(req) {
   }
 }
 
-// DELETE: Видалити аналіз за ID
 export async function DELETE(req) {
   try {
+    const auth = await checkAuthorization(req);
+    if (!auth.authorized) {
+      return new Response(
+        JSON.stringify({ message: auth.error }),
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
     if (!id) {
       return new Response(JSON.stringify({ message: 'ID is required' }), { status: 400 });
+    }
+
+    // Check if user has permission to delete this analysis
+    const existingAnalysis = await prisma.analysis.findUnique({
+      where: { id: parseInt(id, 10) }
+    });
+
+    if (!existingAnalysis) {
+      return new Response(JSON.stringify({ message: 'Analysis not found' }), { status: 404 });
+    }
+
+    if (existingAnalysis.id_user !== auth.session.user.id && auth.session.user.role !== 'admin') {
+      return new Response(JSON.stringify({ message: 'Not authorized to delete this analysis' }), { status: 403 });
     }
 
     await prisma.analysis.delete({

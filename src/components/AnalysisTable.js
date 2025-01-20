@@ -23,6 +23,7 @@ const AnalysisTable = ({ analyses }) => {
               <TableHead>Department</TableHead>
               <TableHead>Total Students</TableHead>
               <TableHead>Grade Distribution</TableHead>
+              <TableHead>Quality</TableHead>
               <TableHead>Overall</TableHead>
               <TableHead>Average</TableHead>
             </TableRow>
@@ -37,8 +38,9 @@ const AnalysisTable = ({ analyses }) => {
                 <TableCell>{analysis.id_department}</TableCell>
                 <TableCell>{analysis.count_stud}</TableCell>
                 <TableCell>
-                  5: {analysis.count5} | 4: {analysis.count4} | 3: {analysis.count3} | 2: {analysis.count2}
+                  5: {analysis.count5} | 4: {analysis.count4} | 3: {analysis.count3} | 2: {analysis.count2} | passed: {analysis.passed} | released: {analysis.released} | not_cert: {analysis.not_cert} | acad_leave: {analysis.acad_leave} | expelled: {analysis.expelled}
                 </TableCell>
+                <TableCell>{analysis.quality}%</TableCell>
                 <TableCell>{analysis.overall.toFixed(2)}%</TableCell>
                 <TableCell>{analysis.average.toFixed(2)}</TableCell>
               </TableRow>
@@ -73,7 +75,10 @@ const AnalysisTable = ({ analyses }) => {
               <strong>Total Students:</strong> {analysis.count_stud}
             </p>
             <p>
-              <strong>Grade Distribution:</strong> 5: {analysis.count5} | 4: {analysis.count4} | 3: {analysis.count3} | 2: {analysis.count2}
+              <strong>Grade Distribution:</strong> 5: {analysis.count5} | 4: {analysis.count4} | 3: {analysis.count3} | 2: {analysis.count2} | passed: {analysis.passed} | released: {analysis.released} | not_cert: {analysis.not_cert} | acad_leave: {analysis.acad_leave} | expelled: {analysis.expelled}
+            </p>
+            <p>
+              <strong>Quality:</strong> {analysis.quality}%
             </p>
             <p>
               <strong>Overall:</strong> {analysis.overall.toFixed(2)}%
