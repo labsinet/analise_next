@@ -83,6 +83,18 @@ const Dashboard = () => {
     </div>;
   }
 
+  function  AddButton() {
+
+  console.log('====================================');
+  console.log(selectedView);
+  console.log('====================================');
+
+
+  }
+  
+  const handleClickAdd = () => {
+    router.push("/dashboard/newanalysis"); 
+  };
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Top Navigation */}
@@ -178,7 +190,9 @@ const Dashboard = () => {
                 {selectedView === 'my' && 'My Analyses'}
                 {selectedView === 'users' && 'User Management'}
               </h1>
-              <Button className="flex items-center gap-2">
+              <Button className="flex items-center gap-2" 
+                         onClick={handleClickAdd}>
+              
                 <Plus size={20} />
                 {selectedView === 'users' ? 'Add User' : 'New Analysis'}
               </Button>

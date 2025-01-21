@@ -12,11 +12,9 @@ export default function MainPage() {
   const t = useTranslations('auth');
   const router = useRouter();
   const handleClickLogin = () => {
-    console.log("Button login clicked!");
     router.push("/login"); 
   };
   const handleClickSignUP = () => {
-    console.log("Button signup clicked!");
     router.push("/signup");
     
   };
